@@ -107,3 +107,9 @@ Example:
 - Add support for transferring funds between accounts.
 - Implement a GUI interface for better usability.
 - Encrypt sensitive data like pin codes for security.
+
+---
+
+## Contributing
+
+Contributions are welcome! Feel free to fork the repository, improve the code, and submit a pull request.
