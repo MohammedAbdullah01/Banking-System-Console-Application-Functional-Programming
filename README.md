@@ -48,8 +48,7 @@ Define different permission levels for users to control access to various functi
 
 ### Helper Functions
 
-- **PrintMessageOnScreen**:
-    Displays a message on the screen.
+- **PrintMessageOnScreen**: Displays a message on the screen.
 - **ReadCharacter**: Reads a single character input from the user.
 - **ReadWords**: Reads multiple words input from the user.
 - **ReadWord**: Reads a single word input from the user.
