@@ -8,12 +8,18 @@ using namespace std;
 
 #pragma region Variables Const
 const string ClientsFileName = "Clients.txt";
+const string UsersFileName = "Users.txt";
 #pragma endregion
+
+
+
 
 #pragma region Defined Function
 void ShowMainMenue();
 
 void ShowTransactionsMenue();
+
+void ShowManageUsersMenue();
 #pragma endregion
 
 #pragma region Helper Function
@@ -149,28 +155,81 @@ vector<string> SplitEachWordInVector(string str , string delimter = " ")
 
 #pragma endregion
 
-#pragma region struct Client Data
+#pragma region structs 
 struct stClientData
 {
 	string accountNumber = "", name = "", pinCode = "", phone = "";
 	float accountBalance = 0.00;
 	bool markForDelete = false;
 };
-#pragma endregion
 
-#pragma region Enum Main Menue Options
-enum enMainMenueOption
+struct stUserData
 {
-	eShowAllClient = 1, eAddClient, eDelete, eUpdate, eFindClient, eTransactions, eExit
+	string userName = "", password = "";
+	short permission = -1;
+	bool markForDelete = false;
 };
 #pragma endregion
 
-#pragma region Enum Main Menue Options
+#pragma region Enums
+enum enMainMenueOption
+{
+	eShowAllClient = 1, eAddClient, eDelete, eUpdate, 
+	eFindClient, eTransactions, eManageUsers, eLogout
+};
+
+enum enManageUsersMenue
+{
+	eListUser = 1,
+	eAddNewUser = 2,
+	eDeleteUser = 3,
+	eUpdateUser = 4,
+	eFindUser = 5,
+	eUMainMenue = 6
+};
+
 enum enTransactionMenueOption
 {
 	eDeposit = 1, eWithdraw, eTotalBalancces, eMainMenue
 };
+
+enum enMainMenuePermissions
+{
+	pAll = -1, pListClients = 1, pAddNewClient = 2, pDeleteClient = 4, pUpdateClient = 8,
+	pFindClient = 16, pTransactions = 32, pManageUser = 64
+};
 #pragma endregion
+
+#pragma region Gloabal Variables
+stUserData GlobalUserData;
+#pragma endregion
+
+#pragma region Check Access Permissions
+bool CheckAccessPermissions(enMainMenuePermissions permission)
+{
+	if (GlobalUserData.permission == enMainMenuePermissions::pAll)
+		return true;
+
+	if ((permission & GlobalUserData.permission) == permission)
+		return true;
+	else
+		return false;
+}
+#pragma endregion
+
+#pragma region Show Access Denied
+void ShowAccessDenied()
+{
+	system("cls");
+	PrintMessageOnScreen("===========================================");
+	PrintMessageOnScreen("\tAccess Denied Screen");
+	PrintMessageOnScreen("===========================================");
+	PrintMessageOnScreen("You Dont Have Permission To Do this,");
+	PrintMessageOnScreen("Please Contact Your Admin.");
+	PrintMessageOnScreen("===========================================");
+}
+#pragma endregion
+
 
 #pragma region Read Choise Main Menue
 short ReadChoiseMainMenue(short to)
@@ -187,6 +246,7 @@ short ReadChoiseMainMenue(short to)
 }
 #pragma endregion
 
+#pragma region Client
 #pragma region convert From Line To Record
 stClientData convertFromLineToRecord(string line, string separetor = "#//#")
 {
@@ -264,6 +324,12 @@ void PrintClientRecordDetails(stClientData client)
 
 void ShowFindClientScreen()
 {
+	if (!CheckAccessPermissions(enMainMenuePermissions::pFindClient))
+	{
+		ShowAccessDenied();
+		return;
+	}
+
 	PrintMessageOnScreen("------------------------------------------------");
 	PrintMessageOnScreen("\t\tFind Client Screen");
 	PrintMessageOnScreen("------------------------------------------------");
@@ -293,6 +359,11 @@ void PrintClientRecord(stClientData client)
 
 void ShowAllClientScreen(vector<stClientData>& vClients)
 {
+	if (!CheckAccessPermissions(enMainMenuePermissions::pListClients))
+	{
+		ShowAccessDenied();
+		return;
+	}
 	cout << "\t\t\t\t\tClinet List (" << vClients.size() << ") Client(s)";
 	cout << "\n-------------------------------------------------";
 	cout << "-------------------------------------------------\n" << endl;
@@ -361,7 +432,6 @@ vector<stClientData> saveClientsDataToFile(string FileName, vector<stClientData>
 				dataLine = convertFromRecordToString(c);
 
 				myFile << dataLine << endl;
-
 			}
 		}
 		myFile.close();
@@ -406,7 +476,6 @@ void AddNewClients()
 
 	do
 	{
-		system("cls");
 		PrintMessageOnScreen("Adding New Clien:\n");
 
 		AddNewClient();
@@ -419,6 +488,11 @@ void AddNewClients()
 
 void ShowAddNewClientScreen()
 {
+	if (!CheckAccessPermissions(enMainMenuePermissions::pAddNewClient))
+	{
+		ShowAccessDenied();
+		return;
+	}
 	PrintMessageOnScreen("-------------------------------------------------");
 	PrintMessageOnScreen("\t\tAdd New Clients Screen");
 	PrintMessageOnScreen("-------------------------------------------------");
@@ -468,6 +542,12 @@ bool DeleteClientByAccountNumber(string accountNumber, vector<stClientData>& VCl
 
 void ShowDeleteClientScreen()
 {
+	if (!CheckAccessPermissions(enMainMenuePermissions::pDeleteClient))
+	{
+		ShowAccessDenied();
+		return;
+	}
+
 	PrintMessageOnScreen("-------------------------------------------------");
 	PrintMessageOnScreen("\t\tDelete Client Screen");
 	PrintMessageOnScreen("-------------------------------------------------");
@@ -527,6 +607,12 @@ bool UpdateClientByAccountNumber(string accountNumber, vector<stClientData>& VCl
 
 void ShowUpdateClientScreen()
 {
+	if (!CheckAccessPermissions(enMainMenuePermissions::pUpdateClient))
+	{
+		ShowAccessDenied();
+		return;
+	}
+
 	PrintMessageOnScreen("-------------------------------------------------");
 	PrintMessageOnScreen("\t\tUpdate Client Screen");
 	PrintMessageOnScreen("-------------------------------------------------");
@@ -537,14 +623,16 @@ void ShowUpdateClientScreen()
 }
 #pragma endregion
 
-
+#pragma region Go Back To Transactions Menue
 void GoBackToTransactionsMenue()
 {
 	PrintMessageOnScreen("\nPress any key to go back to Transaction Menue...");
 	system("pause>0");
 	ShowTransactionsMenue();
 }
+#pragma endregion
 
+#pragma region get Client By Account Number
 stClientData getClientByAccountNumber(vector<stClientData> VClients)
 {
 	stClientData client;
@@ -565,6 +653,9 @@ stClientData getClientByAccountNumber(vector<stClientData> VClients)
 
 	return client;
 }
+#pragma endregion  
+#pragma endregion
+
 
 #pragma region Deposit
 void Deposit(vector<stClientData>& VClients)
@@ -756,6 +847,12 @@ void TransactionsMenue(int chooseNumber)
 #pragma region Show Transactions Menue
 void ShowTransactionsMenue()
 {
+	if (!CheckAccessPermissions(enMainMenuePermissions::pTransactions))
+	{
+		ShowAccessDenied();
+		return;
+	}
+
 	system("cls");
 	PrintMessageOnScreen("===========================================");
 	PrintMessageOnScreen("\tTransactions Menue Screen");
@@ -769,12 +866,526 @@ void ShowTransactionsMenue()
 }
 #pragma endregion
 
-#pragma region Exist Program
-void ShowEndScreen()
+#pragma region Find User By UserName
+bool isFindUser(string userName, vector<stUserData>& users, stUserData& user)
+{
+	for (stUserData& U : users)
+	{
+		if (userName == U.userName)
+		{
+			user = U;
+			return true;
+		}
+	}
+	return false;
+}
+#pragma endregion
+
+#pragma region convert User From Line To Record
+stUserData convertUserFromLineToRecord(string line, string separetor = "#//#")
+{
+	stUserData user;
+
+	vector<string> VUsers = SplitEachWordInVector(line, separetor);
+
+	user.userName = VUsers[0];
+	user.password = VUsers[1];
+	user.permission = stoi(VUsers[2]);
+
+	return user;
+}
+#pragma endregion
+
+#pragma region Load Users Data From File 
+vector<stUserData> LoadUsersDataFromFile()
+{
+	fstream myFile;
+	vector<stUserData> VUsers;
+
+	myFile.open(UsersFileName, ios::in);
+
+	if (myFile.is_open())
+	{
+		string line = "";
+		stUserData user;
+
+		while (getline(myFile, line))
+		{
+			user = convertUserFromLineToRecord(line);
+			VUsers.push_back(user);
+		}
+
+		myFile.close();
+	}
+	return VUsers;
+}
+#pragma endregion
+
+#pragma region Check userName and password valid or not valid
+void checkLogin()
+{
+	stUserData user;
+	string username = "", password;
+	vector<stUserData> users = LoadUsersDataFromFile();
+	bool isInvalid = false;
+
+	do
+	{
+		if (isInvalid)
+		{
+			cout << "\nInvalid Username OR Password\n";
+		}
+
+		username = ReadWord("Enter Username ? ");
+
+		password = ReadWord("Enter Password ? ");
+
+		if (isFindUser(username, users, user))
+		{
+			if (user.password == password)
+			{
+				GlobalUserData = user;
+				return;
+			}
+		}
+		isInvalid = true;
+	} while (true);
+}
+#pragma endregion
+
+#pragma region Login Screen
+
+void ShowLoginScreen()
 {
 	PrintMessageOnScreen("-------------------------------------------------");
-	PrintMessageOnScreen("\t\tProgram End :-)");
+	PrintMessageOnScreen("\t\tLogin Screen");
 	PrintMessageOnScreen("-------------------------------------------------");
+
+	checkLogin();
+	ShowMainMenue();
+}
+#pragma endregion
+
+#pragma region Display All Users
+void PrintUserRecord(stUserData user)
+{
+	cout << "| " << setw(15) << left << user.userName;
+	cout << "| " << setw(10) << left << user.password;
+	cout << "| " << setw(40) << left << user.permission;
+}
+
+void ShowAllUserScreen(vector<stUserData>& vUsers)
+{
+	cout << "\t\t\t\t\tUser List (" << vUsers.size() << ") User(s)";
+	cout << "\n-------------------------------------------------";
+	cout << "-------------------------------------------------\n" << endl;
+
+	cout << "| " << left << setw(15) << "UserName";
+	cout << "| " << left << setw(10) << "Password";
+	cout << "| " << left << setw(40) << "Permission";
+	cout << "\n-------------------------------------------------";
+	cout << "-------------------------------------------------\n" << endl;
+
+	for (stUserData& user : vUsers)
+	{
+		PrintUserRecord(user);
+		cout << endl;
+	}
+	cout << "\n-------------------------------------------------";
+	cout << "-------------------------------------------------\n" << endl;
+}
+#pragma endregion
+
+#pragma region Read User Username
+string ReadUserUsername()
+{
+	string username = ReadWord("\nPlease Enter Username ? ");
+	return username;
+}
+#pragma endregion
+
+#pragma region Add User Permissions 
+int ReadPermissionsToSet()
+{
+	int permissions = 0;
+
+	char answer = ReadCharacter("\nDo You Want To Give Full Access? y/n?");
+
+	if (answer == 'Y' || answer == 'y')
+	{
+		return enMainMenuePermissions::pAll;
+	}
+	PrintMessageOnScreen("\nDo You Want To Give Access To :\n");
+	answer = ReadCharacter("\nShow Client List ? y/n? ");
+
+	if (answer == 'Y' || answer == 'y')
+	{
+		permissions += enMainMenuePermissions::pListClients;
+	}
+
+	answer = ReadCharacter("\nAdd New Client ? y/n? ");
+
+	if (answer == 'Y' || answer == 'y')
+	{
+		permissions += enMainMenuePermissions::pAddNewClient;
+	}
+
+	answer = ReadCharacter("\nDelete Client ? y/n? ");
+
+	if (answer == 'Y' || answer == 'y')
+	{
+		permissions += enMainMenuePermissions::pDeleteClient;
+	}
+
+	answer = ReadCharacter("\nUpdate Client ? y/n? ");
+
+	if (answer == 'Y' || answer == 'y')
+	{
+		permissions += enMainMenuePermissions::pUpdateClient;
+	}
+
+	answer = ReadCharacter("\nFins Client ? y/n? ");
+
+	if (answer == 'Y' || answer == 'y')
+	{
+		permissions += enMainMenuePermissions::pFindClient;
+	}
+
+	answer = ReadCharacter("\nTransactions ? y/n? ");
+
+	if (answer == 'Y' || answer == 'y')
+	{
+		permissions += enMainMenuePermissions::pTransactions;
+	}
+
+	answer = ReadCharacter("\nManage Users ? y/n? ");
+
+	if (answer == 'Y' || answer == 'y')
+	{
+		permissions += enMainMenuePermissions::pManageUser;
+	}
+
+	return permissions;
+
+}
+#pragma endregion
+
+#pragma region convert From Record To String
+string convertFromRecordUserToString(stUserData userRecord, string separetor = "#//#")
+{
+	string result = "";
+	result += userRecord.userName + separetor;
+	result += userRecord.password + separetor;
+	result += to_string(userRecord.permission) + separetor;
+	return result;
+}
+#pragma endregion
+
+#pragma region save Clients Data To File
+vector<stUserData> saveUsersDataToFile(string FileName, vector<stUserData> vUsers)
+{
+	fstream myFile;
+	string dataLine;
+
+	myFile.open(UsersFileName, ios::out);
+
+	if (myFile.is_open())
+	{
+		for (stUserData& u : vUsers)
+		{
+			if (u.markForDelete == false)
+			{
+				dataLine = convertFromRecordUserToString(u);
+
+				myFile << dataLine << endl;
+			}
+		}
+		myFile.close();
+	}
+	return vUsers;
+}
+#pragma endregion
+
+#pragma region Show Find User Screen
+void PrintUserRecordDetails(stUserData user)
+{
+	cout << "The following is the extracted client Details :\n\n"
+		<< "- Username   : " << user.userName << "\n"
+		<< "- Password   : " << user.password << "\n"
+		<< "- Permission : " << user.permission << "\n\n";
+}
+
+void ShowFindUserScreen()
+{
+	PrintMessageOnScreen("------------------------------------------------");
+	PrintMessageOnScreen("\t\tFind User Screen");
+	PrintMessageOnScreen("------------------------------------------------");
+
+	vector <stUserData> VUsers = LoadUsersDataFromFile();
+	stUserData user;
+	string username = ReadUserUsername();
+
+	if (isFindUser(username, VUsers, user))
+	{
+		PrintUserRecordDetails(user);
+		return;
+	}
+	cout << "\nUser With Username [" << username << "] Is Not Found\n";
+}
+#pragma endregion
+
+#pragma region Add New User
+stUserData ReadNewUser()
+{
+	vector<stUserData> VUsers = LoadUsersDataFromFile();
+	stUserData user;
+	user.userName = ReadUserUsername();
+
+	while (isFindUser(user.userName, VUsers, user))
+	{
+		cout << "\nClient With [" << user.userName << "] already exists, ";
+		user.userName = ReadWord("Enter another Username ? ");
+	}
+	user.password = ReadWord("\nEnter Password ? ");
+	user.permission = ReadPermissionsToSet();
+
+	return user;
+}
+
+void AddNewUser()
+{
+	stUserData user;
+	string line = "";
+
+	user = ReadNewUser();
+	line = convertFromRecordUserToString(user);
+	saveRecordLineToFile(UsersFileName, line);
+}
+
+void AddNewUsers()
+{
+	char addMore = 'y';
+
+	do
+	{
+		PrintMessageOnScreen("Adding New User:\n");
+
+		AddNewUser();
+
+		cout << "\nUser Added Successfully, ";
+		addMore = ReadCharacter("do you want to add more users? Y/N?");
+
+	} while (addMore == 'y' || addMore == 'Y');
+}
+
+void ShowAddNewUserScreen()
+{
+	PrintMessageOnScreen("-------------------------------------------------");
+	PrintMessageOnScreen("\t\tAdd New User Screen");
+	PrintMessageOnScreen("-------------------------------------------------");
+
+	AddNewUsers();
+}
+#pragma endregion
+
+#pragma region Delete User By Username
+bool markUserForDeleteByAccountNumber(string username, vector<stUserData>& vUsers)
+{
+	for (stUserData& user : vUsers)
+	{
+		if (username == user.userName)
+		{
+			user.markForDelete = true;
+			return true;
+		}
+	}
+	return false;
+}
+
+bool DeleteUserByUsername(string username, vector<stUserData>& VUsers)
+{
+	if (username == "Admin")
+	{
+		cout << "\n\nYou cannot Delete This User.";
+		return false;
+	}
+
+	stUserData user;
+	char answer = 'n';
+
+	if (isFindUser(username, VUsers, user))
+	{
+		PrintUserRecordDetails(user);
+
+		cout << "\n\nAre You Sure You Want Delete This User ? y/n ?";
+		cin >> answer;
+
+		if (answer == 'y' || answer == 'Y')
+		{
+			markUserForDeleteByAccountNumber(username, VUsers);
+			saveUsersDataToFile(UsersFileName, VUsers);
+			VUsers = LoadUsersDataFromFile();
+			cout << "\n\nUser Deleted Successfully.";
+			return true;
+		}
+	}
+	else
+	{
+		cout << "\nUser With Username (" << username << ") Is Not Found\n";
+	}
+	return false;
+}
+
+void ShowDeleteUserScreen()
+{
+	PrintMessageOnScreen("-------------------------------------------------");
+	PrintMessageOnScreen("\t\tDelete User Screen");
+	PrintMessageOnScreen("-------------------------------------------------");
+
+	vector<stUserData> Vusers = LoadUsersDataFromFile();
+	string username = ReadClientAccountNumber();
+	DeleteUserByUsername(username, Vusers);
+
+}
+#pragma endregion
+
+#pragma region Update User By Username
+stUserData changeUserRecord(string username)
+{
+	stUserData user;
+	user.userName = username;
+	user.password = ReadWord("\nEnter Password ? ");
+	user.permission = ReadPermissionsToSet();
+
+	return user;
+}
+
+bool UpdateUserByUsername(string username, vector<stUserData>& VUsers)
+{
+	stUserData user;
+	char answer = 'n';
+
+	if (isFindUser(username, VUsers, user))
+	{
+		PrintUserRecordDetails(user);
+
+		cout << "\n\nAre You Sure You Want Update This User ? y/n ?";
+		cin >> answer;
+
+		if (answer == 'y' || answer == 'Y')
+		{
+			for (stUserData& U : VUsers)
+			{
+				if (U.userName == username)
+				{
+					U = changeUserRecord(username);
+					break;
+				}
+			}
+
+			saveUsersDataToFile(UsersFileName, VUsers);
+			cout << "\n\nUser Updated Successfully\n";
+			return true;
+		}
+	}
+	cout << "\nUser With Username (" << username << ") Not Found\n";
+	return false;
+}
+
+void ShowUpdateUserScreen()
+{
+	PrintMessageOnScreen("-------------------------------------------------");
+	PrintMessageOnScreen("\t\tUpdate User Screen");
+	PrintMessageOnScreen("-------------------------------------------------");
+
+	vector<stUserData> Vusers = LoadUsersDataFromFile();
+	string username = ReadUserUsername();
+	UpdateUserByUsername(username, Vusers);
+}
+#pragma endregion
+
+#pragma region Go Back To Manage Users Menue
+void GoBackToManageUsersMenue()
+{
+	PrintMessageOnScreen("\nPress any key to go back to Manage Users Menue...");
+	system("pause>0");
+	ShowManageUsersMenue();
+}
+#pragma endregion
+
+#pragma region Manage Users Menu
+void ManageUsersMenue(enManageUsersMenue chooseNumber)
+{
+	vector<stUserData> VUsers;
+	stUserData user;
+	VUsers = LoadUsersDataFromFile();
+
+	switch (chooseNumber)
+	{
+	case eListUser:
+		system("cls");
+		ShowAllUserScreen(VUsers);
+		GoBackToManageUsersMenue();
+		break;
+	case eAddNewUser:
+		system("cls");
+		ShowAddNewUserScreen();
+		GoBackToManageUsersMenue();
+		break;
+	case eDeleteUser:
+		system("cls");
+		ShowDeleteUserScreen();
+		GoBackToManageUsersMenue();
+		break;
+	case eUpdateUser:
+		system("cls");
+		ShowUpdateUserScreen();
+		GoBackToManageUsersMenue();
+		break;
+	case eFindUser:
+		system("cls");
+		ShowFindUserScreen();
+		GoBackToManageUsersMenue();
+		break;
+	case eUMainMenue:
+		system("cls");
+		ShowMainMenue();
+		break;
+	default:
+		cout << "Invalid menu option!\n";
+		break;
+	}
+}
+#pragma endregion
+
+#pragma region Show Manage Users Menue
+void ShowManageUsersMenue()
+{
+	if (!CheckAccessPermissions(enMainMenuePermissions::pManageUser))
+	{
+		ShowAccessDenied();
+		return;
+	}
+
+	system("cls");
+	PrintMessageOnScreen("===========================================");
+	PrintMessageOnScreen("\tManage Users Menue Screen");
+	PrintMessageOnScreen("===========================================");
+	PrintMessageOnScreen("\t[1] List Users.");
+	PrintMessageOnScreen("\t[2] Add New User.");
+	PrintMessageOnScreen("\t[3] Delete User.");
+	PrintMessageOnScreen("\t[4] Update User.");
+	PrintMessageOnScreen("\t[5] Find User.");
+	PrintMessageOnScreen("\t[6] Main Menue.");
+	PrintMessageOnScreen("===========================================");
+	ManageUsersMenue((enManageUsersMenue)ReadChoiseMainMenue(6));
+}
+#pragma endregion
+
+#pragma region Logout
+void ShowLogoutScreen()
+{
+	ShowLoginScreen();
 }
 #pragma endregion
 
@@ -826,10 +1437,15 @@ void  MainMenue(int chooseNumber)
 	case enMainMenueOption::eTransactions:
 		system("cls");
 		ShowTransactionsMenue();
+		GoBackToMainMenue();
 		break;
-	case enMainMenueOption::eExit:
+	case enMainMenueOption::eManageUsers:
 		system("cls");
-		ShowEndScreen();
+		ShowManageUsersMenue();
+		break;
+	case enMainMenueOption::eLogout:
+		system("cls");
+		ShowLogoutScreen();
 		break;
 	}
 }
@@ -848,9 +1464,10 @@ void ShowMainMenue()
 	PrintMessageOnScreen("\t[4] Update Client Info.");
 	PrintMessageOnScreen("\t[5] Find Client.");
 	PrintMessageOnScreen("\t[6] Transactions.");
-	PrintMessageOnScreen("\t[7] Exit.");
+	PrintMessageOnScreen("\t[7] Manage Users.");
+	PrintMessageOnScreen("\t[8] Logout.");
 	PrintMessageOnScreen("===========================================");
-	MainMenue(ReadChoiseMainMenue(7));
+	MainMenue(ReadChoiseMainMenue(8));
 
 }
 #pragma endregion
@@ -858,5 +1475,5 @@ void ShowMainMenue()
 
 int main()
 {
-	ShowMainMenue();
+	ShowLoginScreen();
 }
